@@ -75,20 +75,20 @@ class serialPlot:
         print('Disconnected...')
 
 
-def makeFigure(xLimit, yLimit, title):
+def makeFigure(xLimit, yLimit, title,ax):
     xmin, xmax = xLimit
     ymin, ymax = yLimit
-    fig = plt.figure()
-    ax = plt.axes(xlim=(xmin, xmax), ylim=(int(ymin - (ymax - ymin) / 10), int(ymax + (ymax - ymin) / 10)))
-    ax.set_title(title)
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Accelerometer Output")
-    return fig, ax
+    for i in range(len(ax)): 
+        ax[i] = plt.axes(xlim=(xmin, xmax), ylim=(int(ymin - (ymax - ymin) / 10), int(ymax + (ymax - ymin) / 10)))
+        ax[i].set_title(title)
+        ax[i].set_xlabel("Time")
+        ax[i].set_ylabel("Accelerometer Output")
+    return ax
 
 
 def main():
-    # portName = 'COM5'
-    portName = '/dev/ttyACM0'
+    portName = 'COM3'
+    #portName = '/dev/ttyUSB0'
     baudRate = 38400
     maxPlotLength = 100     # number of points in x-axis of real time plot
     dataNumBytes = 4        # number of bytes of 1 data point
@@ -104,10 +104,9 @@ def main():
     yLimit = [(-1, 1), (-1, 1), (-1, 1)]
     style = ['r-', 'g-', 'b-']    # linestyles for the different plots
     anim = []
-    fig, ax = plt.subplots(numPlots,1,sharex=True)
-
+    fig,ax = plt.subplots(numPlots)
     for i in range(numPlots):
-        #fig, ax = makeFigure(xLimit[i], yLimit[i], title[i])
+        #ax = makeFigure(xLimit[i], yLimit[i], title[i],ax)
         lines = ax[i].plot([], [], style[i], label=lineLabelText[i])[0]
         timeText = ax[i].text(0.50, 0.95, '', transform=ax[i].transAxes)
         lineValueText = ax[i].text(0.50, 0.90, '', transform=ax[i].transAxes)

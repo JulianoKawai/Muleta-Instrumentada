@@ -81,8 +81,8 @@ class serialPlot:
 
 
 def main():
-    # portName = 'COM5'
-    portName = '/dev/ttyACM0'
+    portName = 'COM3'
+    #portName = '/dev/ttyACM0'
     baudRate = 38400
     maxPlotLength = 100     # number of points in x-axis of real time plot
     dataNumBytes = 4        # number of bytes of 1 data point
@@ -94,22 +94,29 @@ def main():
     pltInterval = 50    # Period at which the plot animation updates [ms]
     xmin = 0
     xmax = maxPlotLength
-    ymin = -(1)
-    ymax = 1
-    fig = plt.figure(figsize=(10, 8))
-    ax = plt.axes(xlim=(xmin, xmax), ylim=(float(ymin - (ymax - ymin) / 10), float(ymax + (ymax - ymin) / 10)))
-    ax.set_title('Arduino Accelerometer')
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Accelerometer Output")
+    ymin = -(100)
+    ymax = 100
+    #fig = plt.figure(figsize=(10, 8))
+    #ax = plt.axes(xlim=(xmin, xmax), ylim=(float(ymin - (ymax - ymin) / 10), float(ymax + (ymax - ymin) / 10)))
+    y_labels = ['f1','f2','f3','w1','w2','w3']
+    titles = ['Compressão(N)','Flexão 1(N)', 'Flexão 2(M)','Roll','Pitch','Yall']
+    fig,ax = plt.subplots(numPlots)
+    for i in range(numPlots):
+        ax[i].set_title(titles[i])
+        ax[i].set_ylabel(y_labels[i])
+        ax[i].set_ylim(ymin,ymax)
+        ax[i].set_xlim(0,maxPlotLength)
 
-    lineLabel = ['X', 'Y', 'Z']
-    style = ['r-', 'c-', 'b-']  # linestyles for the different plots
-    timeText = ax.text(0.70, 0.95, '', transform=ax.transAxes)
+    ax[i].set_xlabel("Time")
+    lineLabel = ['X', 'Y', 'Z','A', 'B', 'C']
+    style = ['r-', 'c-', 'b-','r-', 'c-', 'b-']  # linestyles for the different plots
+    
     lines = []
     lineValueText = []
     for i in range(numPlots):
-        lines.append(ax.plot([], [], style[i], label=lineLabel[i])[0])
-        lineValueText.append(ax.text(0.70, 0.90-i*0.05, '', transform=ax.transAxes))
+        lines.append(ax[i].plot([], [], style[i], label=lineLabel[i])[0])
+        lineValueText.append(ax[i].text(0.70, 0.90-i*0.05, '', transform=ax[i].transAxes))
+        timeText = ax[i].text(0.70, 0.95, '', transform=ax[i].transAxes)
     anim = animation.FuncAnimation(fig, s.getSerialData, fargs=(lines, lineValueText, lineLabel, timeText), interval=pltInterval)    # fargs has to be a tuple
 
     plt.legend(loc="upper left")
