@@ -1,4 +1,5 @@
-#include <MPU6050.h>
+#include <I2Cdev.h>
+#include <MPU6050_6Axis_MotionApps20.h> 
 #include <Wire.h>
 
 #include <esp_now.h>
@@ -43,8 +44,8 @@ esp_now_peer_info_t peerInfo;
  
 // Callback function called when data is sent
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  Serial.print("\r\nLast Packet Send Status:\t");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+//  Serial.print("\r\nLast Packet Send Status:\t");
+//  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
 }
 
 struct Button {
@@ -69,10 +70,6 @@ unsigned long t = 0;
 HX711_ADC LoadCell_1(HX711_dout_1, HX711_sck_1); //HX711 1
 HX711_ADC LoadCell_2(HX711_dout_2, HX711_sck_2); //HX711 2
 HX711_ADC LoadCell_3(HX711_dout_3, HX711_sck_3); //HX711 3
-
-MPU6050 accelgyro;
-int16_t ax, ay, az;
-int16_t gx, gy, gz;
 
 byte display_map[10][7] = {
   {0,0,0,0,0,0,1},  //0
@@ -112,6 +109,8 @@ void setup() {
   // initialize serial communication at 115200 bits per second:
   Serial.begin(115200);
 
+  IMU_setup();
+  
   // Set ESP32 as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
   
@@ -143,12 +142,6 @@ void setup() {
   pinMode(33, OUTPUT);  
   pinMode(32, OUTPUT); 
   
-  Wire.begin();
-  Serial.println("Initializing I2C devices...");
-  accelgyro.initialize();
-  Serial.println("Testing device connections...");
-    Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
-
   float calibrationValue_1 = 0; // calibration value load cell 1
   float calibrationValue_2 = 0; // calibration value load cell 2
   float calibrationValue_3 = 0; // calibration value load cell 3
@@ -183,7 +176,7 @@ void setup() {
   LoadCell_2.setCalFactor(calibrationValue_2); // user set calibration value (float)
   LoadCell_3.setCalFactor(calibrationValue_3); // user set calibration value (float)
   Serial.println("Wheatstone bridges startup is complete");
-
+  
   // Now set up two tasks to run independently.
   xTaskCreatePinnedToCore(
     TaskBlink
@@ -244,12 +237,12 @@ void TaskBlink(void *pvParameters)  // This is a task.
         float a = LoadCell_1.getData();
         float b = LoadCell_2.getData();
         float c = LoadCell_3.getData();
-        Serial.print("Load_cell 1 output val: ");
-        Serial.print(a);
-        Serial.print("    Load_cell 2 output val: ");
-        Serial.println(b);
-        Serial.print("    Load_cell 3 output val: ");
-        Serial.println(c);
+//        Serial.print("Load_cell 1 output val: ");
+//        Serial.print(a);
+//        Serial.print("    Load_cell 2 output val: ");
+//        Serial.println(b);
+//        Serial.print("    Load_cell 3 output val: ");
+//        Serial.println(c);
         newDataReady = 0;
         t = millis();
       }
@@ -303,7 +296,7 @@ void TaskSend(void *pvParameters)  // This is a task.
     esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
      
     if (result == ESP_OK) {
-      Serial.println("Sending confirmed");
+      //Serial.println("Sending confirmed");
     }
     else {
       Serial.println("Sending error");
@@ -317,14 +310,7 @@ void TaskIMU(void *pvParameters)  // This is a task.
   (void) pvParameters;
   for (;;) // A Task shall never return or exit.
   {
-    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-//    Serial.print("a/g:\t");
-//    Serial.print(ax); Serial.print("\t");
-//    Serial.print(ay); Serial.print("\t");
-//    Serial.print(az); Serial.print("\t");
-//    Serial.print(gx); Serial.print("\t");
-//    Serial.print(gy); Serial.print("\t");
-//    Serial.println(gz);
-    vTaskDelay(10);
+    IMU_loop();
+    vTaskDelay(20);
   }
 }
