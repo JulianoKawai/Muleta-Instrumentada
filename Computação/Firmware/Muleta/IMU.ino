@@ -1,5 +1,5 @@
-#define OUTPUT_READABLE_YAWPITCHROLL
-
+//#define OUTPUT_READABLE_YAWPITCHROLL
+#define OUTPUT_READABLE_QUATERNION
 MPU6050 mpu;
 
 uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU

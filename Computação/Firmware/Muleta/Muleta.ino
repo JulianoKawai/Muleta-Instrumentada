@@ -1,7 +1,7 @@
 #include <I2Cdev.h>
-#include <MPU6050_6Axis_MotionApps20.h> 
+//#include <MPU6050_6Axis_MotionApps20.h> 
+#include <MPU6050_6Axis_MotionApps_V6_12.h>
 #include <Wire.h>
-
 #include <esp_now.h>
 #include <WiFi.h>
 
@@ -199,7 +199,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     TaskIMU
     ,  "IMU"
-    ,  1024  // Stack size
+    ,  2048  // Stack size
     ,  NULL
     ,  3  // Priority
     ,  NULL 
