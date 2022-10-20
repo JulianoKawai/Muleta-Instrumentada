@@ -57,20 +57,6 @@ struct Button {
 Button button1 = {34, 0, false};
 Button button2 = {35, 0, false};
 
-//HX711
-const int HX711_dout_1 = 15; //mcu > HX711 no 1 dout pin
-const int HX711_sck_1 = 4; //mcu > HX711 no 1 sck pin
-const int HX711_dout_2 = 16; //mcu > HX711 no 2 dout pin
-const int HX711_sck_2 = 17; //mcu > HX711 no 2 sck pin
-const int HX711_dout_3 = 18; //mcu > HX711 no 3 dout pin
-const int HX711_sck_3 = 19; //mcu > HX711 no 3 sck pin
-unsigned long t = 0;
-
-//HX711 constructor (dout pin, sck pin)
-HX711_ADC LoadCell_1(HX711_dout_1, HX711_sck_1); //HX711 1
-HX711_ADC LoadCell_2(HX711_dout_2, HX711_sck_2); //HX711 2
-HX711_ADC LoadCell_3(HX711_dout_3, HX711_sck_3); //HX711 3
-
 byte display_map[10][7] = {
   {0,0,0,0,0,0,1},  //0
   {1,0,0,1,1,1,1},  //1
@@ -104,12 +90,15 @@ void TaskSend(void *pvParameters);
 
 void display_num(int num);
 
+void TaskStrains(void *pvParameters);
+
 void setup() {
   
   // initialize serial communication at 115200 bits per second:
   Serial.begin(115200);
 
   IMU_setup();
+  Strain_Gauge_setup();
   
   // Set ESP32 as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
@@ -142,40 +131,6 @@ void setup() {
   pinMode(33, OUTPUT);  
   pinMode(32, OUTPUT); 
   
-  float calibrationValue_1 = 0; // calibration value load cell 1
-  float calibrationValue_2 = 0; // calibration value load cell 2
-  float calibrationValue_3 = 0; // calibration value load cell 3
-
-  LoadCell_1.begin();
-  LoadCell_2.begin();  
-  LoadCell_3.begin();
-
-  unsigned long stabilizingtime = 2000; // tare preciscion can be improved by adding a few seconds of stabilizing time
-  boolean _tare = true; //set this to false if you don't want tare to be performed in the next step
-  byte loadcell_1_rdy = 0;
-  byte loadcell_2_rdy = 0;
-  byte loadcell_3_rdy = 0;
-  
-  while ((loadcell_1_rdy + loadcell_2_rdy + loadcell_3_rdy) < 2) { //run startup, stabilization and tare, both modules simultaniously
-    if (!loadcell_1_rdy) loadcell_1_rdy = LoadCell_1.startMultiple(stabilizingtime, _tare);
-    if (!loadcell_2_rdy) loadcell_2_rdy = LoadCell_2.startMultiple(stabilizingtime, _tare);
-    if (!loadcell_3_rdy) loadcell_3_rdy = LoadCell_3.startMultiple(stabilizingtime, _tare);
-  }
-  
-  if (LoadCell_1.getTareTimeoutFlag()) {
-    Serial.println("Timeout, check MCU>HX711 no.1 wiring and pin designations");
-  }
-  if (LoadCell_2.getTareTimeoutFlag()) {
-    Serial.println("Timeout, check MCU>HX711 no.2 wiring and pin designations");
-  }
-  if (LoadCell_3.getTareTimeoutFlag()) {
-    Serial.println("Timeout, check MCU>HX711 no.3 wiring and pin designations");
-  }
-  
-  LoadCell_1.setCalFactor(calibrationValue_1); // user set calibration value (float)
-  LoadCell_2.setCalFactor(calibrationValue_2); // user set calibration value (float)
-  LoadCell_3.setCalFactor(calibrationValue_3); // user set calibration value (float)
-  Serial.println("Wheatstone bridges startup is complete");
   
   // Now set up two tasks to run independently.
   xTaskCreatePinnedToCore(
@@ -204,6 +159,14 @@ void setup() {
     ,  3  // Priority
     ,  NULL 
     ,  ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(
+    TaskStrains
+    ,  "Strain"
+    ,  2048  // Stack size
+    ,  NULL
+    ,  4  // Priority
+    ,  NULL 
+    ,  ARDUINO_RUNNING_CORE);
   // Now the task scheduler, which takes over control of scheduling individual tasks, is automatically started.
 }
 
@@ -224,50 +187,6 @@ void TaskBlink(void *pvParameters)  // This is a task.
 
   for (;;) // A Task shall never return or exit.
   {
-    static boolean newDataReady = 0;
-    const int serialPrintInterval = 0; //increase value to slow down serial print activity
-  
-    // check for new data/start next conversion:
-    if (LoadCell_1.update()) newDataReady = true;
-    LoadCell_2.update();
-    LoadCell_3.update();
-    //get smoothed value from data set
-    if ((newDataReady)) {
-      if (millis() > t + serialPrintInterval) {
-        float a = LoadCell_1.getData();
-        float b = LoadCell_2.getData();
-        float c = LoadCell_3.getData();
-//        Serial.print("Load_cell 1 output val: ");
-//        Serial.print(a);
-//        Serial.print("    Load_cell 2 output val: ");
-//        Serial.println(b);
-//        Serial.print("    Load_cell 3 output val: ");
-//        Serial.println(c);
-        newDataReady = 0;
-        t = millis();
-      }
-    }
-  
-    // receive command from serial terminal, send 't' to initiate tare operation:
-    if (Serial.available() > 0) {
-      char inByte = Serial.read();
-      if (inByte == 't') {
-        LoadCell_1.tareNoDelay();
-        LoadCell_2.tareNoDelay();
-        LoadCell_3.tareNoDelay();
-      }
-    }
-  
-    //check if last tare operation is complete
-    if (LoadCell_1.getTareStatus() == true) {
-      Serial.println("Tare load cell 1 complete");
-    }
-    if (LoadCell_2.getTareStatus() == true) {
-      Serial.println("Tare load cell 2 complete");
-    }
-    if (LoadCell_3.getTareStatus() == true) {
-      Serial.println("Tare load cell 3 complete");
-    }
     vTaskDelay(1000);  // one tick delay (15ms) in between reads for stability
   }
 }
@@ -311,6 +230,16 @@ void TaskIMU(void *pvParameters)  // This is a task.
   for (;;) // A Task shall never return or exit.
   {
     IMU_loop();
+    vTaskDelay(20);
+  }
+}
+
+void TaskStrains(void *pvParameters)  // This is a task.
+{
+  (void) pvParameters;
+  for (;;) // A Task shall never return or exit.
+  {
+    Strain_Gauge_loop();
     vTaskDelay(20);
   }
 }
