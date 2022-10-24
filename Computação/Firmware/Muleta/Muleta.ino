@@ -48,41 +48,11 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 //  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
 }
 
-struct Button {
-    const uint8_t PIN;
-    uint32_t numberKeyPresses;
-    bool pressed;
-};
-
-Button button1 = {34, 0, false};
-Button button2 = {35, 0, false};
-
-byte display_map[10][7] = {
-  {0,0,0,0,0,0,1},  //0
-  {1,0,0,1,1,1,1},  //1
-  {0,0,1,0,0,1,0},  //2
-  {0,0,0,0,1,1,0},  //3
-  {1,0,0,1,1,0,0},  //4
-  {0,1,0,0,1,0,0},  //5
-  {0,1,0,0,0,0,0},  //6
-  {0,0,0,1,1,1,1},  //7
-  {0,0,0,0,0,0,0},  //8
-  {0,0,0,0,1,0,0}   //9
-};
-
 byte display_pins[] = {27,26,25,33,32,14,13};
 
 int count = 0;
 
-void display_num(int num)
-{
-  for (int i = 0;i < 7;i++) 
-  {
-     digitalWrite(display_pins[i], display_map[num][i]); 
-  }
-}
-
-void TaskBlink( void *pvParameters );
+void TaskBlink( void *pvParameters);
 
 void TaskIMU(void *pvParameters);
 
