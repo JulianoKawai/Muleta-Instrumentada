@@ -126,15 +126,16 @@ void setup() {
     ,  "IMU"
     ,  2048  // Stack size
     ,  NULL
-    ,  3  // Priority
+    ,  4  // Priority
     ,  NULL 
     ,  ARDUINO_RUNNING_CORE);
+    
   xTaskCreatePinnedToCore(
     TaskStrains
     ,  "Strain"
     ,  2048  // Stack size
     ,  NULL
-    ,  4  // Priority
+    ,  3  // Priority
     ,  NULL 
     ,  ARDUINO_RUNNING_CORE);
   // Now the task scheduler, which takes over control of scheduling individual tasks, is automatically started.
@@ -209,7 +210,7 @@ void TaskStrains(void *pvParameters)  // This is a task.
   (void) pvParameters;
   for (;;) // A Task shall never return or exit.
   {
-    Strain_Gauge_loop();
+    //Strain_Gauge_loop();
     vTaskDelay(20);
   }
 }
