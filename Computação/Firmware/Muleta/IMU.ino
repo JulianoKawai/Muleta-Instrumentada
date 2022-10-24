@@ -95,10 +95,13 @@ void IMU_loop() {
             Serial.print(q.w);
             Serial.print("\t");
             Serial.print(q.x);
+            infos.omgx = q.x;
             Serial.print("\t");
             Serial.print(q.y);
+            infos.omgy = q.y;
             Serial.print("\t");
             Serial.println(q.z);
+             infos.omgz = q.z;
         #endif
 
         #ifdef OUTPUT_READABLE_EULER
