@@ -3,11 +3,13 @@
  
 // Define a data structure
 typedef struct struct_message {
-  char a[32];
-  int b;
-  float c;
-  bool d;
-} struct_message;
+  float lc1;
+  float lc2;
+  float lc3;
+  float omgx;
+  float omgy;
+  float omgz;
+}struct_message;
  
 // Create a structured object
 struct_message myData;
@@ -18,14 +20,18 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   memcpy(&myData, incomingData, sizeof(myData));
   Serial.print("Data received: ");
   Serial.println(len);
-  Serial.print("Character Value: ");
-  Serial.println(myData.a);
-  Serial.print("Integer Value: ");
-  Serial.println(myData.b);
-  Serial.print("Float Value: ");
-  Serial.println(myData.c);
-  Serial.print("Boolean Value: ");
-  Serial.println(myData.d);
+  Serial.print("Load Cell 1: ");
+  Serial.println(myData.lc1);
+  Serial.print("Load Cell 2: ");
+  Serial.println(myData.lc2);
+  Serial.print("Load Cell 3: ");
+  Serial.println(myData.lc3);
+  Serial.print("Omega X: ");
+  Serial.println(myData.omgx);
+  Serial.print("Omega Y: ");
+  Serial.println(myData.omgy);
+  Serial.print("Omega Z: ");
+  Serial.println(myData.omgz);
   Serial.println();
 }
  

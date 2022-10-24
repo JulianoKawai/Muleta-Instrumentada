@@ -93,10 +93,13 @@ void Strain_Gauge_loop() {
       float c = LoadCell_3.getData();
       Serial.print("Load_cell 1 output val: ");
       Serial.print(a);
+      infos.lc1 = a;
       Serial.print("    Load_cell 2 output val: ");
       Serial.print(b);
+      infos.lc2 = b;
       Serial.print("    Load_cell 3 output val: ");
-      Serial.println(3*c);
+      Serial.println(c);
+      infos.lc3 = c;
       newDataReady = 0;
       t = millis();
     }
@@ -122,5 +125,4 @@ void Strain_Gauge_loop() {
   if (LoadCell_3.getTareStatus() == true) {
     Serial.println("Tare load cell 3 complete");
   }
-  
 }
