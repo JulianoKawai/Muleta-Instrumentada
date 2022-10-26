@@ -91,13 +91,13 @@ void Strain_Gauge_loop() {
     float c = LoadCell_3.getData();
     Serial.print("Load_cell 1 output val: ");
     Serial.print(a);
-    infos.lc1 = a;
+    infos.lc1 = (float)a;
     Serial.print("    Load_cell 2 output val: ");
     Serial.print(b);
-    infos.lc2 = b;
+    infos.lc2 = (float)b;
     Serial.print("    Load_cell 3 output val: ");
     Serial.println(c);
-    infos.lc3 = c;
+    infos.lc3 = (float)c;
     newDataReady = 0;
   }
   

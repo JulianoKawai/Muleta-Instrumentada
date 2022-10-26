@@ -20,6 +20,18 @@
 #define LED_BUILTIN 13
 #endif
 
+typedef struct struct_message {
+  float lc1;
+  float lc2;
+  float lc3;
+  float omgx;
+  float omgy;
+  float omgz;
+} struct_message;
+
+// Create a structured object
+struct struct_message infos = { .lc1 = 0.0, .lc2 = 0.0, .lc3 = 0.0, .omgx = 0.0, .omgy = 0.0, .omgz = 0.0 };
+
 int count = 0;
 
 void TaskBlink(void *pvParameters);
@@ -97,8 +109,8 @@ void TaskSend(void *pvParameters)  // This is a task.
 {
   (void)pvParameters;
   for (;;) {
-    Send_Message();
-    vTaskDelay(100);
+    //Send_Message();
+    vTaskDelay(40);
   }
 }
 

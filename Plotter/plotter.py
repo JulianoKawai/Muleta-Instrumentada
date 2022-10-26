@@ -32,7 +32,7 @@ class serialPlot:
         self.thread = None
         self.plotTimer = 0
         self.previousTimer = 0
-        # self.csvData = []
+        self.csvData = []
 
         print('Trying to connect to: ' + str(serialPort) + ' at ' + str(serialBaud) + ' BAUD.')
         try:
@@ -61,7 +61,7 @@ class serialPlot:
             self.data[i].append(value)    # we get the latest data point and append it to our array
             lines[i].set_data(range(self.plotMaxLength), self.data[i])
             lineValueText[i].set_text('[' + lineLabel[i] + '] = ' + str(value))
-        # self.csvData.append([self.data[0][-1], self.data[1][-1], self.data[2][-1]])
+        self.csvData.append([self.data[0][-1], self.data[1][-1], self.data[2][-1]])
 
     def backgroundThread(self):    # retrieve data
         time.sleep(1.0)  # give some buffer time for retrieving data
@@ -76,17 +76,17 @@ class serialPlot:
         self.thread.join()
         self.serialConnection.close()
         print('Disconnected...')
-        # df = pd.DataFrame(self.csvData)
-        # df.to_csv('/home/rikisenia/Desktop/data.csv')
+        df = pd.DataFrame(self.csvData)
+        df.to_csv('calib_data_2.csv',sep=';',decimal=',')
 
 
 def main():
-    portName = 'COM3'
+    portName = 'COM4'
     #portName = '/dev/ttyACM0'
-    baudRate = 38400
+    baudRate = 115200
     maxPlotLength = 100     # number of points in x-axis of real time plot
     dataNumBytes = 4        # number of bytes of 1 data point
-    numPlots = 3            # number of plots in 1 graph
+    numPlots = 6            # number of plots in 1 graph
     s = serialPlot(portName, baudRate, maxPlotLength, dataNumBytes, numPlots)   # initializes all required variables
     s.readSerialStart()                                               # starts background thread
 
@@ -94,18 +94,28 @@ def main():
     pltInterval = 50    # Period at which the plot animation updates [ms]
     xmin = 0
     xmax = maxPlotLength
-    ymin = -(100)
-    ymax = 100
+    ymin = -(1)
+    ymax = 1
     #fig = plt.figure(figsize=(10, 8))
     #ax = plt.axes(xlim=(xmin, xmax), ylim=(float(ymin - (ymax - ymin) / 10), float(ymax + (ymax - ymin) / 10)))
     y_labels = ['f1','f2','f3','w1','w2','w3']
-    titles = ['Compressão(N)','Flexão 1(N)', 'Flexão 2(M)','Roll','Pitch','Yall']
+    titles = ['Flexão X','Flexão Y', 'Compressão','w1','w2','w3']
     fig,ax = plt.subplots(numPlots)
     for i in range(numPlots):
-        ax[i].set_title(titles[i])
-        ax[i].set_ylabel(y_labels[i])
-        ax[i].set_ylim(ymin,ymax)
+        ax[i].set_title(titles[i],size=8)
+        ax[i].set_ylabel(y_labels[i],fontsize=6)
+        #ax[i].set_ylim(ymin,ymax)
         ax[i].set_xlim(0,maxPlotLength)
+        ax[i].grid()
+
+    ax[0].set_ylim(-1500,1500)
+    ax[1].set_ylim(-1500,1500)
+    ax[2].set_ylim(-200,200)
+    ax[3].set_ylim(-1.5,1.5)
+    ax[4].set_ylim(-1.5,1.5)
+    ax[5].set_ylim(-1.5,1.5) 
+
+    plt.subplots_adjust(hspace=0.5)
 
     ax[i].set_xlabel("Time")
     lineLabel = ['X', 'Y', 'Z','A', 'B', 'C']

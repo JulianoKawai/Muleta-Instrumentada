@@ -22,6 +22,7 @@ void IRAM_ATTR isr() {
     if (digitalRead(35) == HIGH) {
       button1.numberKeyPresses++;
       button1.pressed = true;
+      Send_Message();
       digitalWrite(LED_BUILTIN, HIGH);
     }
     if (digitalRead(34) == HIGH) {

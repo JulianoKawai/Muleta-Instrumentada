@@ -95,13 +95,13 @@ void IMU_loop() {
     Serial.print(q.w);
     Serial.print("\t");
     Serial.print(q.x);
-    infos.omgx = q.x;
+    infos.omgx = (float) q.x;
     Serial.print("\t");
     Serial.print(q.y);
-    infos.omgy = q.y;
+    infos.omgy = (float)q.y;
     Serial.print("\t");
     Serial.println(q.z);
-    infos.omgz = q.z;
+    infos.omgz =(float) q.z;
 #endif
 
 #ifdef OUTPUT_READABLE_EULER
@@ -155,10 +155,13 @@ void IMU_loop() {
     Serial.print(q.w);
     Serial.print("\t");
     Serial.print(q.x);
+    infos.omgx = (float) q.x;
     Serial.print("\t");
     Serial.print(q.y);
+    infos.omgy = (float) q.y;
     Serial.print("\t");
     Serial.println(q.z);
+    infos.omgz =(float) q.z;
     Serial.print("aworld\t");
     Serial.print(aaWorld.x);
     Serial.print("\t");
