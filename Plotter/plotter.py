@@ -9,6 +9,7 @@ import matplotlib.animation as animation
 import struct
 import copy
 import pandas as pd
+import numpy as np
 
 
 class serialPlot:
@@ -61,7 +62,7 @@ class serialPlot:
             self.data[i].append(value)    # we get the latest data point and append it to our array
             lines[i].set_data(range(self.plotMaxLength), self.data[i])
             lineValueText[i].set_text('[' + lineLabel[i] + '] = ' + str(value))
-        self.csvData.append([self.data[0][-1], self.data[1][-1], self.data[2][-1]])
+        self.csvData.append([self.data[0][-1], self.data[1][-1], self.data[2][-1],self.data[3][-1],self.data[4][-1],self.data[5][-1]])
 
     def backgroundThread(self):    # retrieve data
         time.sleep(1.0)  # give some buffer time for retrieving data
@@ -77,7 +78,7 @@ class serialPlot:
         self.serialConnection.close()
         print('Disconnected...')
         df = pd.DataFrame(self.csvData)
-        df.to_csv('calib_data_2.csv',sep=';',decimal=',')
+        #df.to_csv('teste_drift_01.csv',sep=';',decimal=',')
 
 
 def main():
@@ -99,7 +100,7 @@ def main():
     #fig = plt.figure(figsize=(10, 8))
     #ax = plt.axes(xlim=(xmin, xmax), ylim=(float(ymin - (ymax - ymin) / 10), float(ymax + (ymax - ymin) / 10)))
     y_labels = ['f1','f2','f3','w1','w2','w3']
-    titles = ['Flexão X','Flexão Y', 'Compressão','w1','w2','w3']
+    titles = ['Flexão X','Flexão Y', 'Compressão','Yall(deg)','Pitch(deg)','Roll(deg)']
     fig,ax = plt.subplots(numPlots)
     for i in range(numPlots):
         ax[i].set_title(titles[i],size=8)
@@ -108,12 +109,12 @@ def main():
         ax[i].set_xlim(0,maxPlotLength)
         ax[i].grid()
 
-    ax[0].set_ylim(-1500,1500)
-    ax[1].set_ylim(-1500,1500)
-    ax[2].set_ylim(-200,200)
-    ax[3].set_ylim(-1.5,1.5)
-    ax[4].set_ylim(-1.5,1.5)
-    ax[5].set_ylim(-1.5,1.5) 
+    ax[0].set_ylim(-50,50)
+    ax[1].set_ylim(-50,50)
+    ax[2].set_ylim(-500,500)
+    ax[3].set_ylim(-4,4)
+    ax[4].set_ylim(-4,4)
+    ax[5].set_ylim(-4,4) 
 
     plt.subplots_adjust(hspace=0.5)
 

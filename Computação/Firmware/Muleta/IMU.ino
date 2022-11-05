@@ -151,23 +151,22 @@ void IMU_loop() {
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
     mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
-    Serial.print("quat\t");
-    Serial.print(q.w);
-    Serial.print("\t");
-    Serial.print(q.x);
-    infos.omgx = (float) q.x;
-    Serial.print("\t");
-    Serial.print(q.y);
-    infos.omgy = (float) q.y;
-    Serial.print("\t");
-    Serial.println(q.z);
-    infos.omgz =(float) q.z;
-    Serial.print("aworld\t");
-    Serial.print(aaWorld.x);
-    Serial.print("\t");
-    Serial.print(aaWorld.y);
-    Serial.print("\t");
-    Serial.println(aaWorld.z);
+    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+    //Serial.print("ypr\t");
+    //Serial.print(ypr[0] * 180 / M_PI);
+    //Serial.print("\t");
+    //Serial.print(ypr[1] * 180 / M_PI);
+    //Serial.print("\t");
+    //Serial.println(ypr[2] * 180 / M_PI);
+    infos.omgx = (float) ypr[0];//* 180 / M_PI;
+    infos.omgy = (float) ypr[1]; //* 180 / M_PI;
+    infos.omgz = (float) ypr[2];//* 180 / M_PI;
+    // Serial.print("aworld\t");
+    // Serial.print(aaWorld.x);
+    // Serial.print("\t");
+    // Serial.print(aaWorld.y);
+    // Serial.print("\t");
+    // Serial.println(aaWorld.z);
 #endif
   }
 }

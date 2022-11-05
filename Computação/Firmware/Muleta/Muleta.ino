@@ -109,7 +109,7 @@ void TaskSend(void *pvParameters)  // This is a task.
 {
   (void)pvParameters;
   for (;;) {
-    //Send_Message();
+    Send_Message();
     vTaskDelay(40);
   }
 }

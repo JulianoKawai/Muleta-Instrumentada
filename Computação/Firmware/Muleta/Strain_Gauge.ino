@@ -18,6 +18,14 @@ const int HX711_sck_3 = 19;   //mcu > HX711 no 2 sck pin
 
 const int samples = 1;
 
+const float L0 = 0.61; //comprimento mínimo, em metros, da ponta da muleta até strain gauges de medição de flexão
+const float L_furos = 0.0251; //distância entre furos de ajuste de altura da muleta
+const float Kx = -1.33935588; //Coeficiente de conversão para força em X 
+const float Ky = 1.51228334; //"""Y
+const float Kz = 132.30355911 ; //"""Z
+
+float fx,fy,fz; //Forças de reação do solo
+
 //HX711 constructor (dout pin, sck pin)
 HX711_ADC LoadCell_1(HX711_dout_1, HX711_sck_1);  //HX711 1
 HX711_ADC LoadCell_2(HX711_dout_2, HX711_sck_2);  //HX711 2
@@ -89,15 +97,20 @@ void Strain_Gauge_loop() {
     float a = LoadCell_1.getData();
     float b = LoadCell_2.getData();
     float c = LoadCell_3.getData();
+    //Conversão do sinal obtido pela célula de carga para forças de reação
+    fx = Kx*(float)a*(L0/(L0+ len_select*L_furos))/100; 
+    fy = Ky*(float)b*(L0/(L0+ len_select*L_furos))/100;
+    fz = Kz*(float)c/100;
+
     Serial.print("Load_cell 1 output val: ");
     Serial.print(a);
-    infos.lc1 = (float)a;
-    Serial.print("    Load_cell 2 output val: ");
+    infos.lc1 = (float)fx;
+    Serial.print("Load_cell 2 output val: ");
     Serial.print(b);
-    infos.lc2 = (float)b;
+    infos.lc2 = (float)fy;
     Serial.print("    Load_cell 3 output val: ");
     Serial.println(c);
-    infos.lc3 = (float)c;
+    infos.lc3 = (float)fz;
     newDataReady = 0;
   }
   
