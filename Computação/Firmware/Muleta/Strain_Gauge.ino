@@ -25,6 +25,7 @@ const float Ky = 1.51228334; //"""Y
 const float Kz = 132.30355911 ; //"""Z
 
 float fx,fy,fz; //Forças de reação do solo
+float *grf = new float[3];
 
 //HX711 constructor (dout pin, sck pin)
 HX711_ADC LoadCell_1(HX711_dout_1, HX711_sck_1);  //HX711 1
@@ -85,7 +86,7 @@ void Strain_Gauge_setup() {
 
 void Strain_Gauge_loop() {
   static boolean newDataReady = 0;
-
+  
   // check for new data/start next conversion:
   if (LoadCell_1.update()) newDataReady = true;
   LoadCell_1.update();
@@ -97,20 +98,22 @@ void Strain_Gauge_loop() {
     float a = LoadCell_1.getData();
     float b = LoadCell_2.getData();
     float c = LoadCell_3.getData();
+
     //Conversão do sinal obtido pela célula de carga para forças de reação
     fx = Kx*(float)a*(L0/(L0+ len_select*L_furos))/100; 
     fy = Ky*(float)b*(L0/(L0+ len_select*L_furos))/100;
     fz = Kz*(float)c/100;
+    grf = get_grf(fx,fy,fz);
 
     Serial.print("Load_cell 1 output val: ");
     Serial.print(a);
-    infos.lc1 = (float)fx;
+    infos.lc1 = grf[0];
     Serial.print("Load_cell 2 output val: ");
     Serial.print(b);
-    infos.lc2 = (float)fy;
-    Serial.print("    Load_cell 3 output val: ");
+    infos.lc2 = grf[1];
+    Serial.print("Load_cell 3 output val: ");
     Serial.println(c);
-    infos.lc3 = (float)fz;
+    infos.lc3 = grf[2];
     newDataReady = 0;
   }
   
@@ -134,4 +137,22 @@ void Strain_Gauge_loop() {
   // if (LoadCell_3.getTareStatus() == true) {
   //   Serial.println("Tare load cell 3 complete");
   // }
+}
+
+float *get_grf(float fx,float fy,float fz){
+  float *ground_reactions_forces = new float[3];
+  
+  float sin_alpha = sin(infos.omgx);//Yaw
+  float cos_alpha = cos(infos.omgx); //Yaw
+  float sin_beta = sin(infos.omgy);//Pitch
+  float cos_beta = cos(infos.omgy); //Pitch
+  float sin_gama = sin(infos.omgz); //Roll
+  float cos_gama = cos(infos.omgz); //Roll
+
+  ground_reactions_forces[0] = fx*(cos_alpha*cos_beta) +fy*(cos_alpha*sin_beta*sin_gama - sin_alpha*cos_gama)+ fz*(cos_alpha*sin_beta*cos_gama + sin_alpha*sin_gama);
+  ground_reactions_forces[1] = fx*(sin_alpha*cos_beta) +fy*(sin_alpha*sin_beta*sin_gama + cos_alpha*cos_gama)+ fz*(sin_alpha*sin_beta*cos_gama - cos_alpha*sin_gama);
+  ground_reactions_forces[2] = fx*(-sin_beta) +fy*(cos_beta*sin_gama)+ fz*(cos_beta*cos_gama);
+
+  return ground_reactions_forces;
+
 }
