@@ -103,7 +103,7 @@ void Strain_Gauge_loop() {
     fx = Kx*(float)a*(L0/(L0+ len_select*L_furos))/100; 
     fy = Ky*(float)b*(L0/(L0+ len_select*L_furos))/100;
     fz = Kz*(float)c/100;
-    grf = get_grf(fx,fy,fz);
+    grf = get_grf_fixed_yaw(fx,fy,fz);
 
     Serial.print("Load_cell 1 output val: ");
     Serial.print(a);
@@ -144,6 +144,24 @@ float *get_grf(float fx,float fy,float fz){
   
   float sin_alpha = sin(infos.omgx);//Yaw
   float cos_alpha = cos(infos.omgx); //Yaw
+  float sin_beta = sin(infos.omgy);//Pitch
+  float cos_beta = cos(infos.omgy); //Pitch
+  float sin_gama = sin(infos.omgz); //Roll
+  float cos_gama = cos(infos.omgz); //Roll
+
+  ground_reactions_forces[0] = fx*(cos_alpha*cos_beta) +fy*(cos_alpha*sin_beta*sin_gama - sin_alpha*cos_gama)+ fz*(cos_alpha*sin_beta*cos_gama + sin_alpha*sin_gama);
+  ground_reactions_forces[1] = fx*(sin_alpha*cos_beta) +fy*(sin_alpha*sin_beta*sin_gama + cos_alpha*cos_gama)+ fz*(sin_alpha*sin_beta*cos_gama - cos_alpha*sin_gama);
+  ground_reactions_forces[2] = fx*(-sin_beta) +fy*(cos_beta*sin_gama)+ fz*(cos_beta*cos_gama);
+
+  return ground_reactions_forces;
+
+}
+
+float *get_grf_fixed_yaw(float fx,float fy,float fz){
+  float *ground_reactions_forces = new float[3];
+  
+  float sin_alpha = 0;//sin(infos.omgx);//Yaw
+  float cos_alpha = 1; //cos(infos.omgx); //Yaw
   float sin_beta = sin(infos.omgy);//Pitch
   float cos_beta = cos(infos.omgy); //Pitch
   float sin_gama = sin(infos.omgz); //Roll
