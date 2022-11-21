@@ -78,11 +78,11 @@ class serialPlot:
         self.serialConnection.close()
         print('Disconnected...')
         df = pd.DataFrame(self.csvData)
-        #df.to_csv('teste_drift_01.csv',sep=';',decimal=',')
+        df.to_csv('teste_drift_02.csv',sep=';',decimal=',')
 
 
 def main():
-    portName = 'COM4'
+    portName = 'COM5'
     #portName = '/dev/ttyACM0'
     baudRate = 115200
     maxPlotLength = 100     # number of points in x-axis of real time plot
