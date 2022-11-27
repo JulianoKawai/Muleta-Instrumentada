@@ -14,7 +14,6 @@ unsigned long button_time = 0;
 unsigned long last_button_time = 0;
 
 bool select_on = false;
-uint16_t len_select = 0;
 
 void IRAM_ATTR isr() {
   button_time = millis();

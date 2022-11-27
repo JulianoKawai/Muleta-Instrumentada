@@ -19,7 +19,6 @@ const int HX711_sck_3 = 19;   //mcu > HX711 no 2 sck pin
 const int samples = 1;
 
 const float L0 = 0.61; //comprimento mínimo, em metros, da ponta da muleta até strain gauges de medição de flexão
-const float L_furos = 0.0251; //distância entre furos de ajuste de altura da muleta
 const float Kx = -1.33935588; //Coeficiente de conversão para força em X 
 const float Ky = 1.51228334; //"""Y
 const float Kz = 132.30355911 ; //"""Z
@@ -105,14 +104,14 @@ void Strain_Gauge_loop() {
     fz = Kz*(float)c/100;
     grf = get_grf_fixed_yaw(fx,fy,fz);
 
-    Serial.print("Load_cell 1 output val: ");
-    Serial.print(a);
+    // Serial.print("Load_cell 1 output val: ");
+    // Serial.print(a);
     infos.lc1 = grf[0];
-    Serial.print("Load_cell 2 output val: ");
-    Serial.print(b);
+    // Serial.print("Load_cell 2 output val: ");
+    // Serial.print(b);
     infos.lc2 = grf[1];
-    Serial.print("Load_cell 3 output val: ");
-    Serial.println(c);
+    // Serial.print("Load_cell 3 output val: ");
+    // Serial.println(c);
     infos.lc3 = grf[2];
     newDataReady = 0;
   }
@@ -139,15 +138,15 @@ void Strain_Gauge_loop() {
   // }
 }
 
-float *get_grf(float fx,float fy,float fz){
+float *get_grf(float fx,float fy,float fz) {
   float *ground_reactions_forces = new float[3];
   
-  float sin_alpha = sin(infos.omgx);//Yaw
+  float sin_alpha = sin(infos.omgx); //Yaw
   float cos_alpha = cos(infos.omgx); //Yaw
-  float sin_beta = sin(infos.omgy);//Pitch
-  float cos_beta = cos(infos.omgy); //Pitch
-  float sin_gama = sin(infos.omgz); //Roll
-  float cos_gama = cos(infos.omgz); //Roll
+  float sin_beta = sin(infos.omgy);  //Pitch
+  float cos_beta = cos(infos.omgy);  //Pitch
+  float sin_gama = sin(infos.omgz);  //Roll
+  float cos_gama = cos(infos.omgz);  //Roll
 
   ground_reactions_forces[0] = fx*(cos_alpha*cos_beta) +fy*(cos_alpha*sin_beta*sin_gama - sin_alpha*cos_gama)+ fz*(cos_alpha*sin_beta*cos_gama + sin_alpha*sin_gama);
   ground_reactions_forces[1] = fx*(sin_alpha*cos_beta) +fy*(sin_alpha*sin_beta*sin_gama + cos_alpha*cos_gama)+ fz*(sin_alpha*sin_beta*cos_gama - cos_alpha*sin_gama);
