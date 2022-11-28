@@ -20,6 +20,9 @@
 #define LED_BUILTIN 13
 #endif
 
+uint16_t len_select = 0;
+const float L_furos = 0.0251; //distância entre furos de ajuste de altura da muleta
+
 typedef struct struct_message {
   float lc1;
   float lc2;
@@ -120,6 +123,7 @@ void TaskIMU(void *pvParameters)  // This is a task.
   for (;;)  // A Task shall never return or exit.
   {
     IMU_loop();
+    //get_tip_position();
     vTaskDelay(20);
   }
 }
@@ -130,6 +134,6 @@ void TaskStrains(void *pvParameters)  // This is a task.
   for (;;)  // A Task shall never return or exit.
   {
     Strain_Gauge_loop();
-    vTaskDelay(20);
+    vTaskDelay(40);
   }
 }

@@ -1,6 +1,3 @@
-//#define OUTPUT_READABLE_YAWPITCHROLL
-//#define OUTPUT_READABLE_QUATERNION
-//#define OUTPUT_READABLE_REALACCEL
 #define OUTPUT_READABLE_WORLDACCEL
 MPU6050 mpu;
 
@@ -18,9 +15,36 @@ VectorInt16 aaWorld;  // [x, y, z]            world-frame accel sensor measureme
 VectorFloat gravity;  // [x, y, z]            gravity vector
 float euler[3];       // [psi, theta, phi]    Euler angle container
 float ypr[3];         // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
+unsigned long dt;
+unsigned long old_time;
+bool first_run = true;
+float old_ypr[3];
+float imu_omega[3];
+double tip_position[3];
+double imu_position[3];
+float tip_velocity[3];
+float *tip_relposition = new float[3];
+double aaWorld_offset[3];
+double aaWorld_new[3];
+double aaWorld_old[3];
+double imu_velocity[3];
+double imu_velocity_old[3];
+
+double vx[3];
+double vy[3];
+double vz[3];
+
+// MEDIR VALORES
+
+float min_lz = 1;
+float lx = -0.03;
+float ly = -0.01;
+
+float acc_threshold = 30000;
+float grf_threshold = 2000;
 
 // packet structure for InvenSense teapot demo
-uint8_t teapotPacket[14] = { '$', 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, '\r', '\n' };
+uint8_t teapotPacket[14] = { '$', 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, '\r', '\n'};
 
 void IMU_setup() {
 // join I2C bus (I2Cdev library doesn't do this automatically)
@@ -88,67 +112,16 @@ void IMU_setup() {
 void IMU_loop() {
   // read a packet from FIFO
   if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) {  // Get the Latest packet
-#ifdef OUTPUT_READABLE_QUATERNION
-    // display quaternion values in easy matrix form: w x y z
-    mpu.dmpGetQuaternion(&q, fifoBuffer);
-    Serial.print("quat\t");
-    Serial.print(q.w);
-    Serial.print("\t");
-    Serial.print(q.x);
-    infos.omgx = (float) q.x;
-    Serial.print("\t");
-    Serial.print(q.y);
-    infos.omgy = (float)q.y;
-    Serial.print("\t");
-    Serial.println(q.z);
-    infos.omgz =(float) q.z;
-#endif
-
-#ifdef OUTPUT_READABLE_EULER
-    // display Euler angles in degrees
-    mpu.dmpGetQuaternion(&q, fifoBuffer);
-    mpu.dmpGetEuler(euler, &q);
-    Serial.print("euler\t");
-    Serial.print(euler[0] * 180 / M_PI);
-    Serial.print("\t");
-    Serial.print(euler[1] * 180 / M_PI);
-    Serial.print("\t");
-    Serial.println(euler[2] * 180 / M_PI);
-#endif
-
-#ifdef OUTPUT_READABLE_YAWPITCHROLL
-    // display Euler angles in degrees
-    mpu.dmpGetQuaternion(&q, fifoBuffer);
-    mpu.dmpGetGravity(&gravity, &q);
-    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-    Serial.print("ypr\t");
-    Serial.print(ypr[0] * 180 / M_PI);
-    Serial.print("\t");
-    Serial.print(ypr[1] * 180 / M_PI);
-    Serial.print("\t");
-    Serial.println(ypr[2] * 180 / M_PI);
-#endif
-
-#ifdef OUTPUT_READABLE_REALACCEL
-    // display real acceleration, adjusted to remove gravity
-    mpu.dmpGetQuaternion(&q, fifoBuffer);
-    mpu.dmpGetAccel(&aa, fifoBuffer);
-    mpu.dmpGetGravity(&gravity, &q);
-    mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-    Serial.print("areal\t");
-    Serial.print(aaReal.x);
-    Serial.print("\t");
-    Serial.print(aaReal.y);
-    Serial.print("\t");
-    Serial.println(aaReal.z);
-#endif
 
 #ifdef OUTPUT_READABLE_WORLDACCEL
     // display initial world-frame acceleration, adjusted to remove gravity
     // and rotated based on known orientation from quaternion
     mpu.dmpGetQuaternion(&q, fifoBuffer);
     mpu.dmpGetAccel(&aa, fifoBuffer);
-    mpu.dmpGetGravity(&gravity, &q);
+    aa.x = aa.x/2;   
+    aa.y = aa.y/2;  
+    aa.z = aa.z/2;
+    mpu.dmpGetGravity(&gravity, &q); 
     mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
     mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
@@ -158,15 +131,178 @@ void IMU_loop() {
     //Serial.print(ypr[1] * 180 / M_PI);
     //Serial.print("\t");
     //Serial.println(ypr[2] * 180 / M_PI);
-    infos.omgx = (float) ypr[0];//* 180 / M_PI;
+    infos.omgx = (float) ypr[0]; //* 180 / M_PI;
     infos.omgy = (float) ypr[1]; //* 180 / M_PI;
-    infos.omgz = (float) ypr[2];//* 180 / M_PI;
+    infos.omgz = (float) ypr[2]; //* 180 / M_PI;
     // Serial.print("aworld\t");
     // Serial.print(aaWorld.x);
     // Serial.print("\t");
     // Serial.print(aaWorld.y);
     // Serial.print("\t");
-    // Serial.println(aaWorld.z);
+    // Serial.println(aaWorld.z);   
 #endif
   }
+}
+
+void get_tip_position() {
+  
+  if (first_run == true) {    
+    old_time = millis();
+    old_ypr[0] = ypr[0];
+    old_ypr[1] = ypr[1];
+    old_ypr[2] = ypr[2]; 
+      
+    imu_velocity[0] = 0;
+    imu_velocity[1] = 0;
+    imu_velocity[2] = 0;
+    
+    tip_position[0] = 0;
+    tip_position[1] = 0;
+    tip_position[2] = 0;
+    
+    aaWorld_offset[0] = 0;
+    aaWorld_offset[1] = 0;
+    aaWorld_offset[2] = 0;    
+    
+    vx[0] = 0.0;
+    vx[1] = 0.0;
+    vx[2] = 0.0;
+    vy[0] = 0.0;
+    vy[1] = 0.0;
+    vy[2] = 0.0;
+    vz[0] = 0.0;
+    vz[1] = 0.0;
+    vz[2] = 0.0;
+    first_run = false;    
+  }
+
+  else {
+    dt = millis() - old_time; 
+    old_time = millis();   
+    
+    aaWorld_old[0] = aaWorld_new[0];
+    aaWorld_old[1] = aaWorld_new[1];
+    aaWorld_old[2] = aaWorld_new[2];   
+
+    imu_velocity_old[0] = imu_velocity[0];
+    imu_velocity_old[1] = imu_velocity[1];
+    imu_velocity_old[2] = imu_velocity[2];
+    
+    // aaWorld_new[0] = butterworth_x(aaWorld.x);
+    // aaWorld_new[1] = butterworth_y(aaWorld.y);
+    // aaWorld_new[2] = butterworth_z(aaWorld.z);
+
+    if (gravity.x>0)
+      aaWorld_new[0] = butterworth_x(0.5*aa.x - gravity.x*8450);
+    else
+      aaWorld_new[0] = butterworth_x(0.5*aa.x - gravity.x*7860);
+    if (gravity.y>0)
+      aaWorld_new[1] = butterworth_y(0.5*aa.y - gravity.y*8250);
+    else
+      aaWorld_new[1] = butterworth_y(0.5*aa.y - gravity.y*8080);
+    aaWorld_new[2] = butterworth_z(0.5*aa.z - gravity.z*8295);
+
+    imu_velocity[0] = imu_velocity[0] + (((aaWorld_new[0] + aaWorld_old[0]) / 2) * dt)/1000000;
+    imu_velocity[1] = imu_velocity[1] + (((aaWorld_new[1] + aaWorld_old[1]) / 2) * dt)/1000000;
+    imu_velocity[2] = imu_velocity[2] + (((aaWorld_new[2] + aaWorld_old[2]) / 2) * dt)/1000000; 
+
+    imu_position[0] = imu_position[0] + (imu_velocity[0] + imu_velocity_old[0])/2 * dt;
+    imu_position[1] = imu_position[1] + (imu_velocity[1] + imu_velocity_old[1])/2 * dt;
+    imu_position[2] = imu_position[2] + (imu_velocity[2] + imu_velocity_old[2])/2 * dt;
+
+    // imu_omega[0] = (ypr[2] - old_ypr[2]) / dt;
+    // imu_omega[1] = (ypr[1] - old_ypr[1]) / dt;
+    // imu_omega[2] = (ypr[0] - old_ypr[0]) / dt;
+
+    // tip_relposition = get_tip_relposition(lx,ly,len_select*L_furos + min_lz);
+
+    // tip_velocity[0] = imu_velocity[0] + imu_omega[1]*tip_relposition[2] - imu_omega[2]*tip_relposition[1];
+    // tip_velocity[1] = imu_velocity[1] - imu_omega[0]*tip_relposition[2] + imu_omega[2]*tip_relposition[0];
+    // tip_velocity[2] = imu_velocity[2] + imu_omega[0]*tip_relposition[1] - imu_omega[1]*tip_relposition[0];  
+      
+    // tip_position[0] = tip_position[0] + tip_velocity[0] * dt;
+    // tip_position[1] = tip_position[1] + tip_velocity[1] * dt;
+    // tip_position[2] = tip_position[2] + tip_velocity[2] * dt;
+    
+    if (aa.z> acc_threshold) { //aaWorld.z < acc_threshold && infos.lc3 < grf_threshold
+      // tip_position[0] = 0;
+      // tip_position[1] = 0;
+      // tip_position[2] = 0;
+      imu_position[0] = 0;
+      imu_position[1] = 0;
+      imu_position[2] = 0;
+      // tip_velocity[0] = 0;
+      // tip_velocity[1] = 0;
+      // tip_velocity[2] = 0;
+      // imu_velocity[0] = 0;
+      // imu_velocity[1] = 0; 
+      // imu_velocity[2] = 0;   
+      // vx[0] = 0;
+      // vx[1] = 0;
+      // vy[0] = 0;
+      // vy[1] = 0;   
+      // vz[0] = 0;
+      // vz[1] = 0;         
+    }
+    
+    old_ypr[0] = ypr[0];
+    old_ypr[1] = ypr[1];
+    old_ypr[2] = ypr[2];
+
+    // Serial.print(imu_position[0]);
+    // Serial.print("\t");
+    // Serial.print(imu_position[1]);
+    // Serial.print("\t");
+    // Serial.println(imu_position[2]);   
+
+    // Serial.print(imu_velocity[0]);
+    // Serial.print("\t");
+    // Serial.print(imu_velocity[1]);
+    // Serial.print("\t");
+    // Serial.println(imu_velocity[2]);    
+
+    // Serial.print(aaReal.x);
+    // Serial.print("\t");
+    // Serial.print(aaReal.y);
+    // Serial.print("\t");
+    // Serial.println(aaReal.z); 
+
+    // Serial.print(aaWorld_new[0]);
+    // Serial.print("\t");
+    // Serial.print(aaWorld_new[1]);
+    // Serial.print("\t");
+    // Serial.println(aaWorld_new[2]);    
+
+  }
+}
+
+float *get_tip_relposition(float dx, float dy, float dz) {
+  return get_grf_fixed_yaw(dx,dy,dz);
+}
+
+float butterworth_x(float x) {
+  vx[0] = vx[1];
+  vx[1] = vx[2];
+  vx[2] = (9.944617889581948145e-1 * x)
+				 + (-0.98895424993312641693 * vx[0])
+				 + (1.98889290589965295197 * vx[1]);
+  return (vx[0] + vx[2]) - 2 * vx[1];
+}
+
+float butterworth_y(float x) {
+  vy[0] = vy[1];
+  vy[1] = vy[2];
+  vy[2] = (9.944617889581948145e-1 * x)
+				 + (-0.98895424993312641693 * vy[0])
+				 + (1.98889290589965295197 * vy[1]);
+  return (vy[0] + vy[2]) - 2 * vy[1];
+}
+
+float butterworth_z(float x) {
+  vz[0] = vz[1];
+  vz[1] = vz[2];
+  vz[2] = (9.944617889581948145e-1 * x)
+				 + (-0.98895424993312641693 * vz[0])
+				 + (1.98889290589965295197 * vz[1]);
+  return (vz[0] + vz[2]) - 2 * vz[1];
 }
